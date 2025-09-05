@@ -14,6 +14,7 @@ export interface ImageHandlingAreaProps {
   handleSubmit: () => void;
   clearForm: () => void;
   removeFile: (fileName: string) => void;
+  downloadAllImages: () => Promise<void>;
 }
 
 /**
@@ -29,10 +30,8 @@ export const ImageHandlingArea: React.FC<ImageHandlingAreaProps> = ({
   handleSubmit,
   clearForm,
   removeFile,
+  downloadAllImages,
 }) => {
-  if (files.length > 0) {
-    console.log("UploadArea rendering", fileStatuses.get(files[0].name));
-  }
   return (
     <div className="space-y-4 max-w-[1200px] mx-auto">
       {!isProcessing && !isProcessingAllFinished && (
@@ -139,12 +138,20 @@ export const ImageHandlingArea: React.FC<ImageHandlingAreaProps> = ({
             </button>
           )}
           {isProcessingAllFinished && (
-            <button
-              onClick={clearForm}
-              className="w-full mt-8 py-4 px-6 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-lg"
-            >
-              Start Over
-            </button>
+            <div className="flex gap-4 mt-8">
+              <button
+                onClick={downloadAllImages}
+                className="flex-1 py-4 px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-lg"
+              >
+                Download All Images
+              </button>
+              <button
+                onClick={clearForm}
+                className="flex-1 py-4 px-6 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-lg"
+              >
+                Start Over
+              </button>
+            </div>
           )}
         </>
       )}

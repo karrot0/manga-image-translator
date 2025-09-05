@@ -1,30 +1,30 @@
 export const languageOptions = [  
-  { value: "CHS", label: "简体中文" },  
-  { value: "CHT", label: "繁體中文" },  
-  { value: "CSY", label: "čeština" },  
-  { value: "NLD", label: "Nederlands" },  
+  { value: "CHS", label: "Simplified Chinese" },  
+  { value: "CHT", label: "Traditional Chinese" },  
+  { value: "CSY", label: "Czech" },  
+  { value: "NLD", label: "Dutch" },  
   { value: "ENG", label: "English" },  
-  { value: "FRA", label: "français" },  
-  { value: "DEU", label: "Deutsch" },  
-  { value: "HUN", label: "magyar nyelv" },  
-  { value: "ITA", label: "italiano" },  
-  { value: "JPN", label: "日本語" },  
-  { value: "KOR", label: "한국어" },  
-  { value: "POL", label: "polski" },  
-  { value: "PTB", label: "português" },  
-  { value: "ROM", label: "limba română" },  
-  { value: "RUS", label: "русский язык" },  
-  { value: "ESP", label: "español" },  
-  { value: "TRK", label: "Türk dili" },  
-  { value: "UKR", label: "українська мова" },  
-  { value: "VIN", label: "Tiếng Việt" },  
-  { value: "ARA", label: "العربية" },  
-  { value: "CNR", label: "crnogorski jezik" },  
-  { value: "SRP", label: "српски језик" },  
-  { value: "HRV", label: "hrvatski jezik" },  
-  { value: "THA", label: "ภาษาไทย" },  
-  { value: "IND", label: "Indonesia" },  
-  { value: "FIL", label: "Wikang Filipino" }  
+  { value: "FRA", label: "French" },  
+  { value: "DEU", label: "German" },  
+  { value: "HUN", label: "Hungarian" },  
+  { value: "ITA", label: "Italian" },  
+  { value: "JPN", label: "Japanese" },  
+  { value: "KOR", label: "Korean" },  
+  { value: "POL", label: "Polish" },  
+  { value: "PTB", label: "Portuguese" },  
+  { value: "ROM", label: "Romanian" },  
+  { value: "RUS", label: "Russian" },  
+  { value: "ESP", label: "Spanish" },  
+  { value: "TRK", label: "Turkish" },  
+  { value: "UKR", label: "Ukrainian" },  
+  { value: "VIN", label: "Vietnamese" },  
+  { value: "ARA", label: "Arabic" },  
+  { value: "CNR", label: "Montenegrin" },  
+  { value: "SRP", label: "Serbian" },  
+  { value: "HRV", label: "Croatian" },  
+  { value: "THA", label: "Thai" },  
+  { value: "IND", label: "Indonesian" },  
+  { value: "FIL", label: "Filipino" }  
 ];  
 
 export const detectionResolutions = [1024, 1536, 2048, 2560];
@@ -45,6 +45,20 @@ export const inpainterOptions = [
   { value: "none", label: "None" },
   { value: "original", label: "Original" },
 ];
+
+export const upscalerOptions = [
+  { value: "esrgan", label: "ESRGAN" },
+  { value: "waifu2x", label: "Waifu2x" },
+  { value: "4xultrasharp", label: "4x Ultra Sharp" },
+  { value: "none", label: "None" },
+];
+
+export const colorizerOptions = [
+  { value: "none", label: "None" },
+  { value: "mc2", label: "MC2" },
+];
+
+export const upscaleRatios = [2, 4, 8];
 
 export const imageMimeTypes = [
   "image/png",

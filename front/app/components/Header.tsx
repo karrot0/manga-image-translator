@@ -1,9 +1,33 @@
 import { Disclosure } from "@headlessui/react";
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 type Props = {};
 
 export const Header: React.FC<Props> = () => {
+  const [isBackendConnected, setIsBackendConnected] = useState<boolean | null>(null);
+
+  const checkBackendConnection = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/', {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000), // 5 second timeout
+      });
+      setIsBackendConnected(response.ok);
+    } catch (error) {
+      setIsBackendConnected(false);
+    }
+  };
+
+  useEffect(() => {
+    // Check connection immediately
+    checkBackendConnection();
+
+    // Check connection every 30 seconds
+    const interval = setInterval(checkBackendConnection, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <Disclosure as="nav" className="bg-white shadow">
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
@@ -25,6 +49,37 @@ export const Header: React.FC<Props> = () => {
               >
                 Manga Translator
               </a>
+            </div>
+          </div>
+          <div className="flex items-center">
+            <div className="flex items-center space-x-4">
+              {/* Backend Connection Status Badge */}
+              <div className="flex items-center space-x-2">
+                <div
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    isBackendConnected === null
+                      ? 'bg-gray-100 text-gray-800'
+                      : isBackendConnected
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full mr-2 ${
+                      isBackendConnected === null
+                        ? 'bg-gray-400'
+                        : isBackendConnected
+                        ? 'bg-green-400'
+                        : 'bg-red-400'
+                    }`}
+                  />
+                  {isBackendConnected === null
+                    ? 'Checking...'
+                    : isBackendConnected
+                    ? 'Backend Connected'
+                    : 'Backend Disconnected'}
+                </div>
+              </div>
             </div>
           </div>
         </div>

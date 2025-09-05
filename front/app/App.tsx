@@ -10,6 +10,8 @@ import { imageMimeTypes } from "@/config";
 import { OptionsPanel } from "@/components/OptionsPanel";
 import { ImageHandlingArea } from "@/components/ImageHandlingArea";
 import { Header } from "@/components/Header";
+import JSZip from "jszip";
+import { useLocalStorageOptions } from "@/hooks/useLocalStorageOptions";
 
 export const App: React.FC = () => {
   // State Hooks
@@ -19,18 +21,40 @@ export const App: React.FC = () => {
   const [shouldTranslate, setShouldTranslate] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
 
-  // Translation Options State Hooks
-  const [detectionResolution, setDetectionResolution] = useState("1536");
-  const [textDetector, setTextDetector] = useState("default");
-  const [renderTextDirection, setRenderTextDirection] = useState("auto");
-  const [translator, setTranslator] = useState<TranslatorKey>("youdao");
-  const [targetLanguage, setTargetLanguage] = useState("CHS");
+  // Translation Options State Hooks - now using localStorage
+  const {
+    options,
+    setDetectionResolution,
+    setTextDetector,
+    setRenderTextDirection,
+    setTranslator,
+    setTargetLanguage,
+    setInpaintingSize,
+    setCustomUnclipRatio,
+    setCustomBoxThreshold,
+    setMaskDilationOffset,
+    setInpainter,
+    setUpscaler,
+    setUpscaleRatio,
+    setColorizer,
+  } = useLocalStorageOptions();
 
-  const [inpaintingSize, setInpaintingSize] = useState("2048");
-  const [customUnclipRatio, setCustomUnclipRatio] = useState<number>(2.3);
-  const [customBoxThreshold, setCustomBoxThreshold] = useState<number>(0.7);
-  const [maskDilationOffset, setMaskDilationOffset] = useState<number>(30);
-  const [inpainter, setInpainter] = useState("default");
+  // Destructure options for easier access
+  const {
+    detectionResolution,
+    textDetector,
+    renderTextDirection,
+    translator,
+    targetLanguage,
+    inpaintingSize,
+    customUnclipRatio,
+    customBoxThreshold,
+    maskDilationOffset,
+    inpainter,
+    upscaler,
+    upscaleRatio,
+    colorizer,
+  } = options;
 
   // Computed State (useMemo)
   const isProcessing = useMemo(() => {
@@ -65,6 +89,20 @@ export const App: React.FC = () => {
           const pastedFile = item.getAsFile();
           if (pastedFile && imageMimeTypes.includes(pastedFile.type)) {
             setFiles((prev) => [...prev, pastedFile]);
+            // Initialize status for pasted file
+            setFileStatuses((prev) => {
+              const newStatuses = new Map(prev);
+              if (!newStatuses.has(pastedFile.name)) {
+                newStatuses.set(pastedFile.name, {
+                  status: null,
+                  progress: null,
+                  queuePos: null,
+                  result: null,
+                  error: null,
+                });
+              }
+              return newStatuses;
+            });
             break;
           }
         }
@@ -98,6 +136,8 @@ export const App: React.FC = () => {
       imageMimeTypes.includes(file.type)
     );
     setFiles((prev) => [...prev, ...validFiles]);
+    // Initialize status for new files
+    initializeFileStatuses(validFiles);
   };
 
   /** ファイル選択時 */
@@ -107,6 +147,8 @@ export const App: React.FC = () => {
       imageMimeTypes.includes(file.type)
     );
     setFiles((prev) => [...prev, ...validFiles]);
+    // Initialize status for new files
+    initializeFileStatuses(validFiles);
   };
 
   // Remove file handler
@@ -125,7 +167,20 @@ export const App: React.FC = () => {
   const handleSubmit = () => {
     if (files.length === 0) return;
 
-    resetFileStatuses();
+    // Reset all file statuses to prepare for new translation
+    setFileStatuses((prev) => {
+      const newStatuses = new Map();
+      files.forEach((file) => {
+        newStatuses.set(file.name, {
+          status: null,
+          progress: null,
+          queuePos: null,
+          result: null,
+          error: null,
+        });
+      });
+      return newStatuses;
+    });
     setShouldTranslate(true);
   };
 
@@ -149,6 +204,13 @@ export const App: React.FC = () => {
         inpainter: inpainter,
         inpainting_size: inpaintingSize,
       },
+      upscale: {
+        upscaler: upscaler,
+        upscale_ratio: upscaleRatio ? parseInt(upscaleRatio) : null,
+      },
+      colorizer: {
+        colorizer: colorizer,
+      },
       mask_dilation_offset: maskDilationOffset,
     });
   };
@@ -159,7 +221,7 @@ export const App: React.FC = () => {
     formData.append("image", file);
     formData.append("config", config);
 
-    const response = await fetch(`/api/translate/with-form/image/stream`, {
+    const response = await fetch(`http://localhost:8000/translate/with-form/image/stream`, {
       method: "POST",
       body: formData,
     });
@@ -173,9 +235,9 @@ export const App: React.FC = () => {
 
   // Translation Processing - Chunk Processing
   const processChunk = async (
-    value: Uint8Array,
+    value: Uint8Array<ArrayBuffer>,
     fileId: string,
-    currentBuffer: Uint8Array
+    currentBuffer: Uint8Array<ArrayBuffer>
   ): Promise<ChunkProcessingResult> => {
     // Check for existing errors first
     if (fileStatuses.get(fileId)?.error) {
@@ -216,7 +278,7 @@ export const App: React.FC = () => {
         throw new Error("Failed to get stream reader");
       }
 
-      let fileBuffer = new Uint8Array();
+      let fileBuffer: Uint8Array<ArrayBuffer> = new Uint8Array();
 
       while (true) {
         const { done, value } = await reader.read();
@@ -257,20 +319,23 @@ export const App: React.FC = () => {
     }
   };
 
-  // Helper to reset file statuses
-  const resetFileStatuses = () => {
-    // Initialize status for all files
-    const newStatuses = new Map();
-    files.forEach((file) => {
-      newStatuses.set(file.name, {
-        status: null,
-        progress: null,
-        queuePos: null,
-        result: null,
-        error: null,
+  // Helper to initialize file statuses for newly added files
+  const initializeFileStatuses = (newFiles: File[]) => {
+    setFileStatuses((prev) => {
+      const newStatuses = new Map(prev);
+      newFiles.forEach((file) => {
+        if (!newStatuses.has(file.name)) {
+          newStatuses.set(file.name, {
+            status: null,
+            progress: null,
+            queuePos: null,
+            result: null,
+            error: null,
+          });
+        }
       });
+      return newStatuses;
     });
-    setFileStatuses(newStatuses);
   };
 
   // Helper to update status for a specific file
@@ -301,7 +366,7 @@ export const App: React.FC = () => {
       case 0: // 結果が返ってきた
         updateFileStatus(fileId, {
           status: "finished",
-          result: new Blob([data], { type: "image/png" }),
+          result: new Blob([data as any], { type: "image/png" }),
         });
         break;
       case 1: // 翻訳中
@@ -332,6 +397,35 @@ export const App: React.FC = () => {
     }
   };
 
+  // Download all translated images as a zip file
+  const downloadAllImages = async () => {
+    const zip = new JSZip();
+    
+    // Add all finished images to the zip
+    for (const [fileName, status] of fileStatuses) {
+      if (status.status === "finished" && status.result) {
+        // Get file extension from original file
+        const originalFile = files.find(f => f.name === fileName);
+        const extension = originalFile ? originalFile.name.split('.').pop() : 'png';
+        const baseName = fileName.replace(/\.[^/.]+$/, ""); // Remove extension
+        const translatedFileName = `${baseName}_translated.${extension}`;
+        
+        zip.file(translatedFileName, status.result);
+      }
+    }
+    
+    // Generate and download the zip file
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "translated_images.zip";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div>
       <Header />
@@ -348,6 +442,9 @@ export const App: React.FC = () => {
             customBoxThreshold={customBoxThreshold}
             maskDilationOffset={maskDilationOffset}
             inpainter={inpainter}
+            upscaler={upscaler}
+            upscaleRatio={upscaleRatio}
+            colorizer={colorizer}
             setDetectionResolution={setDetectionResolution}
             setTextDetector={setTextDetector}
             setRenderTextDirection={setRenderTextDirection}
@@ -358,6 +455,9 @@ export const App: React.FC = () => {
             setCustomBoxThreshold={setCustomBoxThreshold}
             setMaskDilationOffset={setMaskDilationOffset}
             setInpainter={setInpainter}
+            setUpscaler={setUpscaler}
+            setUpscaleRatio={setUpscaleRatio}
+            setColorizer={setColorizer}
           />
           <ImageHandlingArea
             files={files}
@@ -369,6 +469,7 @@ export const App: React.FC = () => {
             handleSubmit={handleSubmit}
             clearForm={clearForm}
             removeFile={removeFile}
+            downloadAllImages={downloadAllImages}
           />
         </div>
       </div>

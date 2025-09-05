@@ -19,7 +19,7 @@ export type StatusKey =
   | null;
 
 export interface ChunkProcessingResult {
-  updatedBuffer: Uint8Array;
+  updatedBuffer: Uint8Array<ArrayBuffer>;
 }
 
 export const processingStatuses = [

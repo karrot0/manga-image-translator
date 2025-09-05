@@ -8,6 +8,9 @@ import {
   textDetectorOptions,
   inpaintingSizes,
   inpainterOptions,
+  upscalerOptions,
+  colorizerOptions,
+  upscaleRatios,
 } from "@/config";
 import { LabeledInput } from "@/components/LabeledInput";
 import { LabeledSelect } from "@/components/LabeledSelect";
@@ -23,6 +26,9 @@ type Props = {
   customBoxThreshold: number;
   maskDilationOffset: number;
   inpainter: string;
+  upscaler: string;
+  upscaleRatio: string;
+  colorizer: string;
 
   setDetectionResolution: (val: string) => void;
   setTextDetector: (val: string) => void;
@@ -34,6 +40,9 @@ type Props = {
   setCustomBoxThreshold: (val: number) => void;
   setMaskDilationOffset: (val: number) => void;
   setInpainter: (val: string) => void;
+  setUpscaler: (val: string) => void;
+  setUpscaleRatio: (val: string) => void;
+  setColorizer: (val: string) => void;
 };
 
 export const OptionsPanel: React.FC<Props> = ({
@@ -47,6 +56,9 @@ export const OptionsPanel: React.FC<Props> = ({
   customBoxThreshold,
   maskDilationOffset,
   inpainter,
+  upscaler,
+  upscaleRatio,
+  colorizer,
   setDetectionResolution,
   setTextDetector,
   setRenderTextDirection,
@@ -57,6 +69,9 @@ export const OptionsPanel: React.FC<Props> = ({
   setCustomBoxThreshold,
   setMaskDilationOffset,
   setInpainter,
+  setUpscaler,
+  setUpscaleRatio,
+  setColorizer,
 }) => {
   return (
     <>
@@ -186,6 +201,48 @@ export const OptionsPanel: React.FC<Props> = ({
           value={inpainter}
           onChange={setInpainter}
           options={inpainterOptions}
+        />
+      </div>
+
+      {/* 3段目のセクション - Upscaling and Colorization */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mt-4">
+        {/* Upscaler */}
+        <LabeledSelect
+          id="upscaler"
+          label="Upscaler"
+          icon="carbon:zoom-in"
+          title="Upscaler"
+          value={upscaler}
+          onChange={setUpscaler}
+          options={upscalerOptions}
+        />
+
+        {/* Upscale Ratio */}
+        <LabeledSelect
+          id="upscaleRatio"
+          label="Upscale Ratio"
+          icon="carbon:fit-to-screen"
+          title="Upscale ratio"
+          value={upscaleRatio}
+          onChange={setUpscaleRatio}
+          options={[
+            { value: "", label: "None" },
+            ...upscaleRatios.map((ratio) => ({
+              label: `${ratio}x`,
+              value: String(ratio),
+            })),
+          ]}
+        />
+
+        {/* Colorizer */}
+        <LabeledSelect
+          id="colorizer"
+          label="Colorizer"
+          icon="carbon:color-palette"
+          title="Colorizer"
+          value={colorizer}
+          onChange={setColorizer}
+          options={colorizerOptions}
         />
       </div>
     </>
